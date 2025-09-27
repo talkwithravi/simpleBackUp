@@ -1,0 +1,180 @@
+# End-to-End Testing Guide
+
+This guide walks you through testing the complete photo backup system from start to finish.
+
+## Prerequisites
+
+1. **Mac Requirements**:
+   - Go 1.21+ installed
+   - Both devices on the same Wi-Fi network
+   - Firewall allows connections on port 8081
+
+2. **iPhone Requirements**:
+   - Xcode installed
+   - Real iPhone device (camera required for QR scanning)
+   - iOS 14.0+ for SwiftUI and PHPicker
+
+## Step 1: Start the Web Agent (No iOS App Required)
+
+1. Open Terminal on your Mac
+2. Navigate to the project directory:
+   ```bash
+   cd /Users/bandanakumari/Documents/Projects/simpleBackup
+   ```
+3. Start the web agent:
+   ```bash
+   cd web-agent
+   go run main.go
+   ```
+4. You should see output like:
+   ```
+   Photo Backup Web Interface with Gallery
+   ======================================
+   Local: http://localhost:8082
+   Network: http://192.168.68.104:8082
+
+   Instructions:
+   1. Open the above URL in Safari on your iPhone
+   2. Upload photos and view gallery
+   3. Files will be saved to ~/MobileBackup/
+   ```
+
+## Step 2: Set Up the iPhone App
+
+1. **Create a new Xcode project**:
+   - Open Xcode
+   - Create new project → iOS → App
+   - Product Name: "SnapVault"
+   - Interface: SwiftUI
+   - Lifecycle: SwiftUI App
+   - Language: Swift
+
+2. **Add the Swift files to your project**:
+   - Delete the default `ContentView.swift`
+   - Drag and drop the provided files from `ios-app/` into your Xcode project:
+     - `QRCodeScanner.swift`
+     - `ContentView.swift`
+   - Make sure "Copy items if needed" is checked
+   - Add to your main target
+
+3. **Configure Info.plist**:
+   - Open your project's `Info.plist`
+   - Add the following entries (or replace existing ones):
+   ```xml
+   <key>NSPhotoLibraryUsageDescription</key>
+   <string>Allow saving and uploading photos</string>
+   <key>NSCameraUsageDescription</key>
+   <string>Required to scan pairing QR code</string>
+   <key>NSAppTransportSecurity</key>
+   <dict>
+       <key>NSAllowsArbitraryLoads</key>
+       <true/>
+   </dict>
+   ```
+
+4. **Set up the main app file**:
+   - Replace the contents of your `App.swift` with:
+   ```swift
+   import SwiftUI
+   
+   @main
+   struct SnapVaultApp: App {
+       var body: some Scene {
+           WindowGroup {
+               ContentView()
+           }
+       }
+   }
+   ```
+
+## Step 3: Pair the Devices
+
+1. **On your Mac**:
+   - Keep the terminal running with the Mac agent
+   - Open Safari/Chrome and go to: `http://192.168.68.104:8081/qr`
+   - You should see a QR code displayed
+
+2. **On your iPhone**:
+   - Build and run the app on your iPhone
+   - Tap "Scan Pairing QR"
+   - Point the camera at the QR code on your Mac screen
+   - The app should automatically capture the QR code and show "Paired: [URL]"
+
+## Step 4: Upload Photos
+
+1. **On your iPhone**:
+   - Tap "Pick Photos to Upload"
+   - Select one or more photos from your photo library
+   - The app will upload them automatically
+
+2. **Monitor the upload process**:
+   - Watch the status text in the iPhone app
+   - Check the Mac agent terminal for upload logs
+
+## Step 5: Verify the Upload
+
+1. **Check file storage**:
+   ```bash
+   ls -la ~/MobileBackup/
+   ```
+   You should see directories organized by device ID and date.
+
+2. **Check metadata**:
+   ```bash
+   cat ~/MobileBackup/metadata.json
+   ```
+   This should show JSON with your uploaded file details.
+
+3. **Test download functionality**:
+   ```bash
+   curl "http://192.168.68.104:8081/list"
+   ```
+   Get the file ID from the response, then:
+   ```bash
+   curl "http://192.168.68.104:8081/download?id=YOUR_FILE_ID"
+   ```
+
+## Troubleshooting Common Issues
+
+### QR Code Not Scanning
+- Ensure both devices are on the same Wi-Fi network
+- Make sure the QR code is clearly visible on screen
+- Try increasing screen brightness
+
+### Upload Fails
+- Check that the Mac agent is still running
+- Verify the iPhone can reach the Mac's IP address
+- Test with: `ping 192.168.68.104` from another device
+
+### Permission Errors
+- Ensure all Info.plist permissions are correctly set
+- Grant camera and photo library permissions when prompted on iPhone
+
+### Network Issues
+- Check Mac firewall settings
+- Ensure port 8081 is accessible
+- Try using the Mac's local IP instead of hostname
+
+## Testing with curl (Alternative Method)
+
+If you want to test without the iPhone app:
+
+1. **Get upload URL**:
+   ```bash
+   curl http://192.168.68.104:8081/pair
+   ```
+
+2. **Upload a test file**:
+   ```bash
+   curl -F "token=YOUR_TOKEN" -F "deviceId=test-phone" -F "file=@/path/to/your/photo.jpg" http://192.168.68.104:8081/upload
+   ```
+
+## Expected Results
+
+After successful testing, you should have:
+- Photos stored in `~/MobileBackup/{deviceId}/{year}/{month}/`
+- Metadata entries in `~/MobileBackup/metadata.json`
+- Successful upload confirmation in the iPhone app
+- File integrity maintained with SHA256 checksums
+
+The system is now ready for regular use!
