@@ -371,166 +371,27 @@ func homeHandler(w http.ResponseWriter, r *http.Request) {
             const k = 1024;
             const sizes = ['Bytes', 'KB', 'MB', 'GB'];
             const i = Math.floor(Math.log(bytes) / Math.log(k));
-            return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
-        }
-        
-        function getCurrentDeviceId() {
-            return document.getElementById('deviceId').value;
-        }
-        
-        function addNewDevice() {
-            const deviceName = prompt('Enter a name for the new device:');
-            if (deviceName && deviceName.trim()) {
-                const deviceId = deviceName.trim().toLowerCase().replace(/\s+/g, '-');
-                const select = document.getElementById('deviceId');
-                const option = document.createElement('option');
-                option.value = deviceId;
-                option.textContent = deviceName.trim();
-                select.appendChild(option);
-                select.value = deviceId;
-                loadGallery();
-            }
-        }
-        
-        async function uploadFiles() {
-            if (selectedFiles.length === 0) return;
-            
-            const uploadBtn = document.getElementById('uploadBtn');
-            const results = document.getElementById('results');
-            
-            uploadBtn.disabled = true;
-            uploadBtn.textContent = 'Uploading...';
-            results.innerHTML = '';
-            
-            const formData = new FormData();
-            selectedFiles.forEach(file => {
-                formData.append('files', file);
-            });
-            formData.append('deviceId', getCurrentDeviceId());
-            
-            try {
-                const response = await fetch('/upload', {
-                    method: 'POST',
-                    body: formData
-                });
-                
-                const result = await response.json();
-                
-                if (result.status === 'success') {
-                    results.innerHTML = 
-                        '<div class="success">✅ Upload successful! ' + result.count + ' file(s) uploaded</div>' +
-                        '<ul>' + result.results.map(r => '<li>' + r + '</li>').join('') + '</ul>';
-                    selectedFiles = [];
-                    document.getElementById('fileInput').value = '';
-                    uploadBtn.disabled = true;
-                    loadGallery(); // Auto-refresh gallery after upload
-                } else {
-                    results.innerHTML = '<div class="error">❌ Upload failed</div>';
-                }
-            } catch (error) {
-                results.innerHTML = '<div class="error">❌ Error: ' + error.message + '</div>';
-            }
-            
-            uploadBtn.disabled = false;
-            uploadBtn.textContent = 'Upload Selected Files';
-        }
-        
-        function downloadFile(fileId, fileName) {
-            const link = document.createElement('a');
-            link.href = '/download?id=' + fileId;
-            link.download = fileName;
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-        }
-        
-        async function loadGallery() {
-            try {
-                const deviceId = getCurrentDeviceId();
-                const response = await fetch('/files');
-                const files = await response.json();
-                
-                const gallery = document.getElementById('gallery');
-                if (files.length === 0) {
-                    gallery.innerHTML = '<p>No files uploaded yet for this device</p>';
-                    return;
-                }
-                
-                // Filter files by current device
-                const deviceFiles = files.filter(file => file.deviceId === deviceId);
-                
-                if (deviceFiles.length === 0) {
-                    gallery.innerHTML = '<p>No files found for ' + deviceId + '</p>';
-                    return;
-                }
-                
-                gallery.innerHTML = '';
-                deviceFiles.forEach(file => {
-                    const gridItem = document.createElement('div');
-                    gridItem.className = 'grid-item';
-                    
-                    const img = document.createElement('img');
-                    img.src = '/download?id=' + file.id;
-                    img.alt = file.fileName;
-                    img.title = file.fileName + ' (' + formatFileSize(file.fileSize) + ')';
-                    img.onclick = () => window.open(img.src, '_blank');
-                    
-                    const fileInfo = document.createElement('div');
-                    fileInfo.className = 'file-info';
-                    fileInfo.textContent = file.fileName.substring(0, 15) + (file.fileName.length > 15 ? '...' : '');
-                    
-                    const downloadBtn = document.createElement('button');
-                    downloadBtn.className = 'download-btn';
-                    downloadBtn.textContent = '⬇️';
-                    downloadBtn.title = 'Download ' + file.fileName;
-                    downloadBtn.onclick = (e) => {
-                        e.stopPropagation();
-                        downloadFile(file.id, file.fileName);
-                    };
-                    
-                    gridItem.appendChild(img);
-                    gridItem.appendChild(downloadBtn);
-                    gridItem.appendChild(fileInfo);
-                    gallery.appendChild(gridItem);
-                });
-            } catch (error) {
-                document.getElementById('gallery').innerHTML = '<p class="error">Error loading gallery</p>';
-            }
-        }
-        
-        // Load gallery on page load
-        loadGallery();
-    </script>
-</body>
-</html>`
-	
-	w.Header().Set("Content-Type", "text/html")
-	w.Write([]byte(html))
-}
+            return parseFloat((bytes / Math.pow(k,
 
 func main() {
 	ensureDirs()
 	ip := localIP()
 	
 	http.HandleFunc("/", homeHandler)
-	http.HandleFunc("/qr", qrHandler)
 	http.HandleFunc("/upload", uploadHandler)
 	http.HandleFunc("/list", listHandler)
 	http.HandleFunc("/files", filesHandler)
 	http.HandleFunc("/download", downloadHandler)
 	
-	fmt.Println("Enhanced Mobile Backup Web Interface")
-	fmt.Println("====================================")
+	fmt.Println("Photo Backup Web Interface with Gallery")
+	fmt.Println("======================================")
 	fmt.Printf("Local: http://localhost:%d\n", port)
 	fmt.Printf("Network: http://%s:%d\n", ip, port)
-	fmt.Printf("QR Code: http://%s:%d/qr\n", ip, port)
 	fmt.Println("")
-	fmt.Println("Features:")
-	fmt.Println("- QR code pairing for easy device connection")
-	fmt.Println("- Multiple device support with separate folders")
-	fmt.Println("- Auto-refresh gallery after upload")
-	fmt.Println("- Download files back to mobile devices")
-	fmt.Println("- Mobile-optimized web interface")
+	fmt.Println("Instructions:")
+	fmt.Println("1. Open the above URL in Safari on your iPhone")
+	fmt.Println("2. Upload photos and view gallery")
+	fmt.Println("3. Files will be saved to ~/MobileBackup/")
 	fmt.Println("")
 	fmt.Println("Server running...")
 	

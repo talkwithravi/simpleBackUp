@@ -215,47 +215,6 @@ func downloadHandler(w http.ResponseWriter, r *http.Request) {
 	http.Error(w, "file not found", 404)
 }
 
-func qrHandler(w http.ResponseWriter, r *http.Request) {
-	ip := localIP()
-	url := "http://" + ip + ":" + strconv.Itoa(port)
-	
-	// Simple QR code using Unicode characters (fallback for no external dependencies)
-	html := `<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>QR Code for Mobile Backup</title>
-    <style>
-        body { font-family: -apple-system, BlinkMacSystemFont, sans-serif; margin: 40px; background: #f5f5f7; text-align: center; }
-        .qr-container { background: white; padding: 40px; border-radius: 20px; display: inline-block; box-shadow: 0 10px 30px rgba(0,0,0,0.1); }
-        .qr-code { font-family: monospace; font-size: 24px; margin: 20px 0; }
-        .url { font-family: monospace; background: #f0f0f0; padding: 15px; border-radius: 10px; margin: 20px 0; word-break: break-all; }
-        .instructions { color: #666; margin: 20px 0; }
-    </style>
-</head>
-<body>
-    <div class="qr-container">
-        <h1>📱 Mobile Backup QR Code</h1>
-        <div class="instructions">
-            <p>Scan this QR code with your iPhone camera to open the backup interface</p>
-        </div>
-        <div class="qr-code">
-            <div style="font-size: 48px; margin: 20px 0;">📱</div>
-            <div>Mobile Backup</div>
-        </div>
-        <div class="url">` + url + `</div>
-        <div class="instructions">
-            <p>Or copy and paste the URL above into Safari on your iPhone</p>
-        </div>
-    </div>
-</body>
-</html>`
-	
-	w.Header().Set("Content-Type", "text/html")
-	w.Write([]byte(html))
-}
-
 func homeHandler(w http.ResponseWriter, r *http.Request) {
 	ip := localIP()
 	html := `<!DOCTYPE html>
@@ -275,54 +234,33 @@ func homeHandler(w http.ResponseWriter, r *http.Request) {
         #fileInput { display: none; }
         .btn { background: #007AFF; color: white; border: none; padding: 12px 24px; border-radius: 8px; font-size: 16px; cursor: pointer; margin: 5px; }
         .btn:disabled { background: #ccc; cursor: not-allowed; }
-        .btn-secondary { background: #6c757d; }
-        .btn-secondary:hover { background: #545b62; }
         .grid { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 20px; }
-        .grid-item { position: relative; width: 120px; }
         .grid img { width: 120px; height: 120px; object-fit: cover; cursor: pointer; border-radius: 8px; border: 2px solid #e0e0e0; }
         .grid img:hover { border-color: #007AFF; }
-        .file-info { position: absolute; bottom: 0; left: 0; right: 0; background: rgba(0,0,0,0.7); color: white; padding: 5px; font-size: 12px; border-radius: 0 0 8px 8px; }
-        .download-btn { position: absolute; top: 5px; right: 5px; background: #28a745; color: white; border: none; border-radius: 4px; padding: 2px 6px; font-size: 10px; cursor: pointer; }
         .info { color: #666; font-size: 14px; margin-bottom: 20px; text-align: center; }
         .qr-code { font-family: monospace; background: #f0f0f0; padding: 10px; border-radius: 4px; margin: 10px 0; }
         .results { margin-top: 20px; padding: 10px; border-radius: 8px; }
         .success { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
         .error { background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
-        .device-selector { margin: 15px 0; }
-        .device-selector select { padding: 8px; border-radius: 6px; border: 1px solid #ddd; }
     </style>
 </head>
 <body>
     <div class="container">
         <div class="header">
-            <h1>📱 Mobile Backup</h1>
-            <p>Upload photos from multiple devices and manage your backups</p>
+            <h1>📲 Upload Photos to Mac</h1>
+            <p>Upload new photos and view your backup gallery</p>
         </div>
         
         <div class="card">
             <div class="info">
                 <strong>Server:</strong> ` + ip + `:` + strconv.Itoa(port) + `<br>
-                <a href="/qr" style="color: #007AFF; text-decoration: none;">📱 Get QR Code for Easy Pairing</a>
+                <strong>Access this page from your iPhone Safari</strong>
             </div>
             
             <div style="text-align: center; margin: 20px 0;">
-                <p>Access this page from any device browser:</p>
+                <p>On your iPhone, open Safari and go to:</p>
                 <div class="qr-code">http://` + ip + `:` + strconv.Itoa(port) + `</div>
-            </div>
-        </div>
-
-        <div class="card">
-            <h2>Device Selection</h2>
-            <div class="device-selector">
-                <label for="deviceId">Select Device:</label>
-                <select id="deviceId" onchange="loadGallery()">
-                    <option value="iphone-web">iPhone Web</option>
-                    <option value="iphone-1">iPhone 1</option>
-                    <option value="iphone-2">iPhone 2</option>
-                    <option value="ipad">iPad</option>
-                    <option value="android">Android</option>
-                </select>
-                <button class="btn btn-secondary" onclick="addNewDevice()">+ Add New Device</button>
+                <p>Or scan this URL with your iPhone camera</p>
             </div>
         </div>
 
@@ -340,7 +278,7 @@ func homeHandler(w http.ResponseWriter, r *http.Request) {
         </div>
 
         <div class="card">
-            <h2>📂 Backup Gallery</h2>
+            <h2>📂 Uploaded Files Gallery</h2>
             <button class="btn" onclick="loadGallery()">Refresh Gallery</button>
             <div id="gallery" class="grid"></div>
         </div>
@@ -348,7 +286,6 @@ func homeHandler(w http.ResponseWriter, r *http.Request) {
 
     <script>
         let selectedFiles = [];
-        let currentDeviceId = 'iphone-web';
         
         function handleFileSelect(files) {
             selectedFiles = Array.from(files);
@@ -374,24 +311,6 @@ func homeHandler(w http.ResponseWriter, r *http.Request) {
             return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
         }
         
-        function getCurrentDeviceId() {
-            return document.getElementById('deviceId').value;
-        }
-        
-        function addNewDevice() {
-            const deviceName = prompt('Enter a name for the new device:');
-            if (deviceName && deviceName.trim()) {
-                const deviceId = deviceName.trim().toLowerCase().replace(/\s+/g, '-');
-                const select = document.getElementById('deviceId');
-                const option = document.createElement('option');
-                option.value = deviceId;
-                option.textContent = deviceName.trim();
-                select.appendChild(option);
-                select.value = deviceId;
-                loadGallery();
-            }
-        }
-        
         async function uploadFiles() {
             if (selectedFiles.length === 0) return;
             
@@ -406,7 +325,7 @@ func homeHandler(w http.ResponseWriter, r *http.Request) {
             selectedFiles.forEach(file => {
                 formData.append('files', file);
             });
-            formData.append('deviceId', getCurrentDeviceId());
+            formData.append('deviceId', 'iphone-web');
             
             try {
                 const response = await fetch('/upload', {
@@ -423,7 +342,7 @@ func homeHandler(w http.ResponseWriter, r *http.Request) {
                     selectedFiles = [];
                     document.getElementById('fileInput').value = '';
                     uploadBtn.disabled = true;
-                    loadGallery(); // Auto-refresh gallery after upload
+                    loadGallery(); // Refresh gallery after upload
                 } else {
                     results.innerHTML = '<div class="error">❌ Upload failed</div>';
                 }
@@ -435,63 +354,25 @@ func homeHandler(w http.ResponseWriter, r *http.Request) {
             uploadBtn.textContent = 'Upload Selected Files';
         }
         
-        function downloadFile(fileId, fileName) {
-            const link = document.createElement('a');
-            link.href = '/download?id=' + fileId;
-            link.download = fileName;
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-        }
-        
         async function loadGallery() {
             try {
-                const deviceId = getCurrentDeviceId();
                 const response = await fetch('/files');
                 const files = await response.json();
                 
                 const gallery = document.getElementById('gallery');
                 if (files.length === 0) {
-                    gallery.innerHTML = '<p>No files uploaded yet for this device</p>';
-                    return;
-                }
-                
-                // Filter files by current device
-                const deviceFiles = files.filter(file => file.deviceId === deviceId);
-                
-                if (deviceFiles.length === 0) {
-                    gallery.innerHTML = '<p>No files found for ' + deviceId + '</p>';
+                    gallery.innerHTML = '<p>No files uploaded yet</p>';
                     return;
                 }
                 
                 gallery.innerHTML = '';
-                deviceFiles.forEach(file => {
-                    const gridItem = document.createElement('div');
-                    gridItem.className = 'grid-item';
-                    
+                files.forEach(file => {
                     const img = document.createElement('img');
                     img.src = '/download?id=' + file.id;
                     img.alt = file.fileName;
                     img.title = file.fileName + ' (' + formatFileSize(file.fileSize) + ')';
                     img.onclick = () => window.open(img.src, '_blank');
-                    
-                    const fileInfo = document.createElement('div');
-                    fileInfo.className = 'file-info';
-                    fileInfo.textContent = file.fileName.substring(0, 15) + (file.fileName.length > 15 ? '...' : '');
-                    
-                    const downloadBtn = document.createElement('button');
-                    downloadBtn.className = 'download-btn';
-                    downloadBtn.textContent = '⬇️';
-                    downloadBtn.title = 'Download ' + file.fileName;
-                    downloadBtn.onclick = (e) => {
-                        e.stopPropagation();
-                        downloadFile(file.id, file.fileName);
-                    };
-                    
-                    gridItem.appendChild(img);
-                    gridItem.appendChild(downloadBtn);
-                    gridItem.appendChild(fileInfo);
-                    gallery.appendChild(gridItem);
+                    gallery.appendChild(img);
                 });
             } catch (error) {
                 document.getElementById('gallery').innerHTML = '<p class="error">Error loading gallery</p>';
@@ -513,24 +394,20 @@ func main() {
 	ip := localIP()
 	
 	http.HandleFunc("/", homeHandler)
-	http.HandleFunc("/qr", qrHandler)
 	http.HandleFunc("/upload", uploadHandler)
 	http.HandleFunc("/list", listHandler)
 	http.HandleFunc("/files", filesHandler)
 	http.HandleFunc("/download", downloadHandler)
 	
-	fmt.Println("Enhanced Mobile Backup Web Interface")
-	fmt.Println("====================================")
+	fmt.Println("Photo Backup Web Interface with Gallery")
+	fmt.Println("======================================")
 	fmt.Printf("Local: http://localhost:%d\n", port)
 	fmt.Printf("Network: http://%s:%d\n", ip, port)
-	fmt.Printf("QR Code: http://%s:%d/qr\n", ip, port)
 	fmt.Println("")
-	fmt.Println("Features:")
-	fmt.Println("- QR code pairing for easy device connection")
-	fmt.Println("- Multiple device support with separate folders")
-	fmt.Println("- Auto-refresh gallery after upload")
-	fmt.Println("- Download files back to mobile devices")
-	fmt.Println("- Mobile-optimized web interface")
+	fmt.Println("Instructions:")
+	fmt.Println("1. Open the above URL in Safari on your iPhone")
+	fmt.Println("2. Upload photos and view gallery")
+	fmt.Println("3. Files will be saved to ~/MobileBackup/")
 	fmt.Println("")
 	fmt.Println("Server running...")
 	

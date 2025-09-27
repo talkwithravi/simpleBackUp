@@ -536,3 +536,28 @@ func main() {
 	
 	log.Fatal(http.ListenAndServe(fmt.Sprintf(":%d", port), nil))
 }
+
+func main() {
+	ensureDirs()
+	ip := localIP()
+	
+	http.HandleFunc("/", homeHandler)
+	http.HandleFunc("/upload", uploadHandler)
+	http.HandleFunc("/list", listHandler)
+	http.HandleFunc("/files", filesHandler)
+	http.HandleFunc("/download", downloadHandler)
+	
+	fmt.Println("Photo Backup Web Interface with Gallery")
+	fmt.Println("======================================")
+	fmt.Printf("Local: http://localhost:%d\n", port)
+	fmt.Printf("Network: http://%s:%d\n", ip, port)
+	fmt.Println("")
+	fmt.Println("Instructions:")
+	fmt.Println("1. Open the above URL in Safari on your iPhone")
+	fmt.Println("2. Upload photos and view gallery")
+	fmt.Println("3. Files will be saved to ~/MobileBackup/")
+	fmt.Println("")
+	fmt.Println("Server running...")
+	
+	log.Fatal(http.ListenAndServe(fmt.Sprintf(":%d", port), nil))
+}
