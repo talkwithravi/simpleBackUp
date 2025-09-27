@@ -444,32 +444,6 @@ func homeHandler(w http.ResponseWriter, r *http.Request) {
             document.body.removeChild(link);
         }
         
-        function getFileIcon(filename) {
-            const ext = filename.toLowerCase().split('.').pop();
-            switch(ext) {
-                case 'jpg': case 'jpeg': case 'png': case 'gif': case 'bmp': case 'webp':
-                    return '🖼️';
-                case 'mp4': case 'mov': case 'avi': case 'mkv': case 'flv':
-                    return '🎬';
-                case 'pdf':
-                    return '📄';
-                case 'doc': case 'docx':
-                    return '📝';
-                case 'xls': case 'xlsx':
-                    return '📊';
-                case 'ppt': case 'pptx':
-                    return '📽️';
-                case 'zip': case 'rar': case '7z': case 'tar':
-                    return '📦';
-                case 'mp3': case 'wav': case 'aac': case 'flac':
-                    return '🎵';
-                case 'txt': case 'rtf':
-                    return '📃';
-                default:
-                    return '📁';
-            }
-        }
-
         async function loadGallery() {
             try {
                 const deviceId = getCurrentDeviceId();
@@ -495,15 +469,11 @@ func homeHandler(w http.ResponseWriter, r *http.Request) {
                     const gridItem = document.createElement('div');
                     gridItem.className = 'grid-item';
                     
-                    const fileIcon = document.createElement('div');
-                    fileIcon.className = 'file-icon';
-                    fileIcon.style.cssText = 'width: 120px; height: 120px; background: #f0f0f0; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 48px; cursor: pointer; border: 2px solid #e0e0e0;';
-                    fileIcon.title = file.fileName + ' (' + formatFileSize(file.fileSize) + ')';
-                    fileIcon.onclick = () => window.open('/download?id=' + file.id, '_blank');
-                    
-                    const icon = document.createElement('div');
-                    icon.textContent = getFileIcon(file.fileName);
-                    fileIcon.appendChild(icon);
+                    const img = document.createElement('img');
+                    img.src = '/download?id=' + file.id;
+                    img.alt = file.fileName;
+                    img.title = file.fileName + ' (' + formatFileSize(file.fileSize) + ')';
+                    img.onclick = () => window.open(img.src, '_blank');
                     
                     const fileInfo = document.createElement('div');
                     fileInfo.className = 'file-info';
@@ -518,7 +488,7 @@ func homeHandler(w http.ResponseWriter, r *http.Request) {
                         downloadFile(file.id, file.fileName);
                     };
                     
-                    gridItem.appendChild(fileIcon);
+                    gridItem.appendChild(img);
                     gridItem.appendChild(downloadBtn);
                     gridItem.appendChild(fileInfo);
                     gallery.appendChild(gridItem);
