@@ -223,7 +223,7 @@ func handleDiscovery(w http.ResponseWriter, r *http.Request) {
 func startDiscoveryListener() {
 	conn, err := net.ListenUDP("udp", &net.UDPAddr{
 		IP:   net.IPv4zero,
-		Port: discoveryPort,
+		Port: 5353,
 	})
 	if err != nil {
 		log.Printf("Discovery listener failed: %v", err)
@@ -231,7 +231,7 @@ func startDiscoveryListener() {
 	}
 	defer conn.Close()
 	
-	log.Printf("Discovery listener started on UDP port %d", discoveryPort)
+	log.Printf("Discovery listener started on UDP port 5353")
 	
 	buffer := make([]byte, 1024)
 	for {
@@ -274,7 +274,7 @@ func main() {
 	fmt.Printf("Discovery: http://%s:%d/discovery\n", ip, port)
 	fmt.Println("")
 	fmt.Println("🔍 Discovery Features:")
-	fmt.Printf("- UDP broadcast listener on port %d\n", discoveryPort)
+	fmt.Println("- UDP broadcast listener on port 5353")
 	fmt.Println("- Responds to 'DISCOVER_SIMPLEBACKUP' requests")
 	fmt.Println("- JSON discovery endpoint at /discovery")
 	fmt.Println("- Automatically discoverable on local network")

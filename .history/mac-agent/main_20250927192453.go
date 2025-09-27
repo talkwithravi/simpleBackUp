@@ -6,6 +6,7 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"github.com/grandcat/zeroconf"
 	"github.com/skip2/go-qrcode"
 	"io"
 	"log"
@@ -19,8 +20,7 @@ import (
 )
 
 const (
-	port         = 8083
-	discoveryPort = 5354
+	port         = 8081
 	storageRoot  = "MobileBackup" // will be created in user's home dir
 	metadataFile = "metadata.json"
 )
@@ -203,89 +203,22 @@ func handleUpload(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte(`{"status":"ok","id":"` + id + `"}`))
 }
 
-// Simple discovery endpoint that returns server info
-func handleDiscovery(w http.ResponseWriter, r *http.Request) {
-	ip := localIP()
-	response := map[string]string{
-		"name":        "Mac Backup Agent",
-		"version":     "1.0",
-		"upload_url":  uploadURL,
-		"server_ip":   ip,
-		"server_port": strconv.Itoa(port),
-		"qr_url":      fmt.Sprintf("http://%s:%d/qr", ip, port),
-	}
-	
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(response)
-}
-
-// Simple UDP broadcast listener for discovery requests
-func startDiscoveryListener() {
-	conn, err := net.ListenUDP("udp", &net.UDPAddr{
-		IP:   net.IPv4zero,
-		Port: discoveryPort,
-	})
-	if err != nil {
-		log.Printf("Discovery listener failed: %v", err)
-		return
-	}
-	defer conn.Close()
-	
-	log.Printf("Discovery listener started on UDP port %d", discoveryPort)
-	
-	buffer := make([]byte, 1024)
-	for {
-		n, addr, err := conn.ReadFromUDP(buffer)
-		if err != nil {
-			continue
-		}
-		
-		message := string(buffer[:n])
-		if message == "DISCOVER_SIMPLEBACKUP" {
-			ip := localIP()
-			response := fmt.Sprintf("SIMPLEBACKUP_FOUND:%s:%d", ip, port)
-			conn.WriteToUDP([]byte(response), addr)
-			log.Printf("Discovery request from %s", addr.IP)
-		}
-	}
-}
-
 func main() {
 	ensureDirs()
 	pairToken = genToken(16)
 	ip := localIP()
 	uploadURL = fmt.Sprintf("http://%s:%d/upload?token=%s", ip, port, pairToken)
 
-	// Start discovery listener in a goroutine
-	go startDiscoveryListener()
-
 	http.HandleFunc("/qr", handleQR)
 	http.HandleFunc("/pair", handlePairInfo)
 	http.HandleFunc("/upload", handleUpload)
 	http.HandleFunc("/list", handleList)
 	http.HandleFunc("/download", handleDownload)
-	http.HandleFunc("/discovery", handleDiscovery)
 
-	fmt.Println("🚀 Mac Agent with Simple Discovery")
-	fmt.Println("==================================")
-	fmt.Printf("Local: http://localhost:%d\n", port)
-	fmt.Printf("Network: http://%s:%d\n", ip, port)
-	fmt.Printf("QR Code: http://%s:%d/qr\n", ip, port)
-	fmt.Printf("Discovery: http://%s:%d/discovery\n", ip, port)
-	fmt.Println("")
-	fmt.Println("🔍 Discovery Features:")
-	fmt.Printf("- UDP broadcast listener on port %d\n", discoveryPort)
-	fmt.Println("- Responds to 'DISCOVER_SIMPLEBACKUP' requests")
-	fmt.Println("- JSON discovery endpoint at /discovery")
-	fmt.Println("- Automatically discoverable on local network")
-	fmt.Println("")
-	fmt.Println("📱 Instructions:")
-	fmt.Println("1. iPhone can discover this agent via UDP broadcast")
-	fmt.Println("2. Or scan QR code: http://" + ip + ":" + strconv.Itoa(port) + "/qr")
-	fmt.Println("3. Or get upload URL: http://" + ip + ":" + strconv.Itoa(port) + "/pair")
-	fmt.Println("4. Or use discovery endpoint: http://" + ip + ":" + strconv.Itoa(port) + "/discovery")
-	fmt.Println("")
-	fmt.Println("Server running with discovery support...")
-	
+	fmt.Println("Mac Agent running.")
+	fmt.Println("Open this on your Mac browser to scan QR from phone:")
+	fmt.Printf("http://%s:%d/qr\n", ip, port)
+	fmt.Println("Or visit /pair to get the upload url JSON:")
+	fmt.Printf("http://%s:%d/pair\n", ip, port)
 	log.Fatal(http.ListenAndServe(":"+strconv.Itoa(port), nil))
 }

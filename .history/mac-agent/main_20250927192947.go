@@ -274,7 +274,7 @@ func main() {
 	fmt.Printf("Discovery: http://%s:%d/discovery\n", ip, port)
 	fmt.Println("")
 	fmt.Println("🔍 Discovery Features:")
-	fmt.Printf("- UDP broadcast listener on port %d\n", discoveryPort)
+	fmt.Println("- UDP broadcast listener on port 5353")
 	fmt.Println("- Responds to 'DISCOVER_SIMPLEBACKUP' requests")
 	fmt.Println("- JSON discovery endpoint at /discovery")
 	fmt.Println("- Automatically discoverable on local network")
