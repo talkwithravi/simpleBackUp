@@ -4,13 +4,23 @@ A local Wi-Fi photo backup system that allows an iPhone to send photos to a Mac 
 
 ## Components
 
-### 1. Mac Agent (Go)
+### 1. Mac Agent (Go) - Enhanced with Auto-Discovery
 - Serves QR codes for pairing
 - Handles file uploads via HTTP
+- **Auto-discovery via UDP broadcast** (port 5354)
+- **JSON discovery endpoint** at `/discovery`
 - Stores photos in `~/MobileBackup/{deviceId}/{yyyy}/{mm}/`
 - Maintains metadata in `~/MobileBackup/metadata.json`
 
-### 2. iPhone App (SwiftUI)
+### 2. Web Agent (Go) - No iOS App Required
+- **Mobile-optimized web interface** for iPhone Safari
+- **Gallery view** of uploaded files with auto-refresh
+- **Multiple device support** with separate folders
+- **Download capability** to get files back to mobile
+- **QR code pairing** for easy connection
+- Runs on port 8082
+
+### 3. iPhone App (SwiftUI) - Optional Native App
 - Scans QR codes for pairing
 - Selects photos from library
 - Uploads photos to Mac agent
@@ -74,10 +84,19 @@ go run main.go
 
 ## API Endpoints
 
+### Mac Agent (Port 8083)
 - `GET /qr` - Returns QR code PNG for pairing
 - `GET /pair` - Returns JSON with upload URL
+- `GET /discovery` - Returns JSON with server info for auto-discovery
 - `POST /upload` - Accepts photo uploads (multipart/form-data)
 - `GET /list` - Returns metadata JSON
+- `GET /download?id={id}` - Downloads specific file
+
+### Web Agent (Port 8082)
+- `GET /` - Mobile-optimized web interface with gallery
+- `GET /qr` - QR code pairing page
+- `GET /files` - Returns JSON list of uploaded files
+- `POST /upload` - Accepts multiple file uploads
 - `GET /download?id={id}` - Downloads specific file
 
 ## Development Notes
@@ -93,11 +112,16 @@ go run main.go
 simpleBackup/
 ├── mac-agent/
 │   ├── go.mod
+│   ├── go.sum
+│   └── main.go
+├── web-agent/
+│   ├── go.mod
 │   └── main.go
 ├── ios-app/
 │   ├── Info.plist
 │   ├── QRCodeScanner.swift
 │   └── ContentView.swift
+├── TESTING_GUIDE.md
 └── README.md
 ```
 
